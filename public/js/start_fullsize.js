@@ -47,7 +47,7 @@ var vue_options = {
         try{
             if( searchs.type == 'vmd'){
                 await this.mmd.loadWithAnimation( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vmd) );
-            }else if( this.select.type == 'vpd'){
+            }else if( searchs.type == 'vpd'){
                 await this.mmd.loadWithPose( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vpd) );
             }
         }catch(error){
