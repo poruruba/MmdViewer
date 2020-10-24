@@ -103,14 +103,14 @@ var vue_options = {
     methods: {
         open: function(index){
             var select = this.selecting[index];
-            var param = "pmx=" + encodeURIComponent(this.character_list[select.index].fname);
+            var param = "?pmx=" + encodeURIComponent(this.character_list[select.index].fname);
             param += "&type=" + this.selecting_type[index];
             if( this.selecting_type[index] == 'vmd')
                 param += "&vmd=" + encodeURIComponent(vmd_base + this.animation_list[select.vmd_index]);
             else if( this.selecting_type[index] == 'vpd' )
                 param += "&vpd=" + encodeURIComponent(vpd_base + this.pose_list[select.vpd_index]);
             
-            window.open("fullsize.html?" + param, this.character_list[select.index].title);
+            window.open("fullsize.html" + param, this.character_list[select.index].title);
         },
         save: async function(index){
             var canvas = $('#canvas_' + index)[0];
