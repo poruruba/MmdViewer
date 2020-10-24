@@ -110,7 +110,7 @@ var vue_options = {
             else if( this.selecting_type[index] == 'vpd' )
                 param += "&vpd=" + encodeURIComponent(vpd_base + this.pose_list[select.vpd_index]);
             
-            window.open("fullsize.html?" + param, this.character_list[this.selecting[index].index].title);
+            window.open("fullsize.html?" + param, this.character_list[select.index].title);
         },
         save: async function(index){
             var canvas = $('#canvas_' + index)[0];
