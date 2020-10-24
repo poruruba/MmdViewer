@@ -156,6 +156,7 @@ class MmdView{
   }
 
   dispose(){
+    this.ready = false;
     this.scene.remove(this.mesh);
     this.renderer.dispose();
   }
