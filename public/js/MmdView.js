@@ -12,7 +12,7 @@ let ammo_initialized = false;
 const loader = new MMDLoader();
 
 class MmdView{
-  constructor(canvas, width, height){
+  constructor(canvas, width, height, grid_enable = true, orbit_enable = true ){
     this.camera_rasio = width / height;
     this.isPaused = false;
     this.ready = false;
@@ -27,10 +27,6 @@ class MmdView{
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color( 0xffffff );
 
-    const gridHelper = new THREE.PolarGridHelper( 30, 10 );
-    gridHelper.position.y = - 10;
-    this.scene.add( gridHelper );
-
     const ambient = new THREE.AmbientLight( 0x666666 );
     this.scene.add( ambient );
 
@@ -44,11 +40,19 @@ class MmdView{
     this.effect = new OutlineEffect( this.renderer );
     this.resize( width, height );
 
-    // model
+    // option
 
-    const controls = new OrbitControls( this.camera, this.renderer.domElement );
-    controls.minDistance = 10;
-    controls.maxDistance = 100;
+    if( grid_enable ){
+      const gridHelper = new THREE.PolarGridHelper( 30, 10 );
+      gridHelper.position.y = - 10;
+      this.scene.add( gridHelper );
+    }
+
+    if( orbit_enable ){
+      const controls = new OrbitControls( this.camera, this.renderer.domElement );
+      controls.minDistance = 10;
+      controls.maxDistance = 100;
+    }
   }
 
   async loadWithAnimation(modelFile, vmdFile){
