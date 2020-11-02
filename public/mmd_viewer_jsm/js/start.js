@@ -6,80 +6,87 @@ import { MmdView } from './MmdView.js';
 
 const num_of_tile = 2;
 
+var mmd_base = "../mmd/";
 var pmx_list = [
     {
-        fname: 'mmd/Mirai_Akari_v1.0/MiraiAkari_v1.0.pmx',
+        fname: 'Mirai_Akari_v1.0/MiraiAkari_v1.0.pmx',
         title: 'ミライアカリ'
     },
     {
-        fname: 'mmd/kizunaai/kizunaai.pmx',
+        fname: 'kizunaai/kizunaai.pmx',
         title: 'キヅナアイ'
     },
     {
-        fname: 'mmd/miku/miku_v2.pmd',
+        fname: 'miku/miku_v2.pmd',
         title: '初音ミク'
     },
     {
-        fname: 'mmd/ando/安柏.pmx',
+        fname: 'ando/安柏.pmx',
         title: 'アンバー'
     },
     {
-        fname: 'mmd/wendi/温迪.pmx',
+        fname: 'wendi/温迪.pmx',
         title: 'ウエンティ'
     },
     {
-        fname: 'mmd/kaiya/凯亚.pmx',
+        fname: 'kaiya/凯亚.pmx',
         title: 'ガイア'
     },
     {
-        fname: 'mmd/qin/琴.pmx',
+        fname: 'qin/琴.pmx',
         title: 'ジン'
     },
     {
-        fname: 'mmd/diluke/迪卢克.pmx',
+        fname: 'diluke/迪卢克.pmx',
         title: 'ディルック'
     },
     {
-        fname: 'mmd/babala/芭芭拉.pmx',
+        fname: 'babala/芭芭拉.pmx',
         title: 'バーバラ'
     },
     {
-        fname: 'mmd/paimeng/派蒙.pmx',
+        fname: 'paimeng/派蒙.pmx',
         title: 'パイモン'
     },
     {
-        fname: 'mmd/feixieer/菲谢尔.pmx',
+        fname: 'feixieer/菲谢尔.pmx',
         title: 'フィッシュル'
     },
     {
-        fname: 'mmd/lisha/丽莎.pmx',
+        fname: 'lisha/丽莎.pmx',
         title: 'リサ'
     },
     {
-        fname: 'mmd/ningguang/凝光.pmx',
+        fname: 'ningguang/凝光.pmx',
         title: '凝光'
     },
     {
-        fname: 'mmd/kong/空.pmx',
+        fname: 'kong/空.pmx',
         title: '空'
     },
     {
-        fname: 'mmd/ying/女主角.pmx',
+        fname: 'ying/女主角.pmx',
         title: '蛍'
     },
     {
-        fname: 'mmd/xiangling/香菱.pmx',
+        fname: 'xiangling/香菱.pmx',
         title: '香菱'
     },
 ];
+var stage_list = [
+    {
+        fname: "stage/stage.pmd",
+        title: "stage"
+    }
+];
 
-var vmd_base = "mmd/vmds/";
+var vmd_base = "../mmd/vmds/";
 var vmd_list = [
     "wavefile_v2.vmd",
     "wavefile_camera.vmd",
 ];
 
-var vpd_base = "mmd/vpds/";
+var vpd_base = "../mmd/vpds/";
 var vpd_list = [
     "01.vpd",
     "02.vpd",
@@ -99,25 +106,32 @@ var vue_options = {
     data: {
         progress_title: '', // for progress-dialog
 
+        stage_list: stage_list,
         character_list: pmx_list,
         animation_list: vmd_list,
         pose_list: vpd_list,
         selecting: [],
         num_of_tile: num_of_tile,
         selecting_type: [],
+        selecting_stage: "",
     },
     computed: {
     },
     methods: {
-        open: function(index){
+        open: function(index, mode){
             var select = this.selecting[index];
-            var param = "pmx=" + encodeURIComponent(this.character_list[select.index].fname);
+            var param = "pmx=" + mmd_base + encodeURIComponent(this.character_list[select.index].fname);
             param += "&type=" + this.selecting_type[index];
             if( this.selecting_type[index] == 'vmd')
-                param += "&vmd=" + encodeURIComponent(vmd_base + this.animation_list[select.vmd_index]);
+                param += "&vmd=" + vmd_base + encodeURIComponent(this.animation_list[select.vmd_index]);
             else if( this.selecting_type[index] == 'vpd' )
-                param += "&vpd=" + encodeURIComponent(vpd_base + this.pose_list[select.vpd_index]);
+                param += "&vpd=" + vpd_base + encodeURIComponent(this.pose_list[select.vpd_index]);
             
+            if( this.selecting_stage )
+                param += "&stage=" + mmd_base + this.selecting_stage;
+            if( mode )
+                param += "&mode=" + mode;
+
             window.open("fullsize.html?" + param, this.character_list[this.selecting[index].vmd_index].title);
         },
         save: async function(index){
@@ -145,16 +159,19 @@ var vue_options = {
                 return;
 
             try{
+                this.progress_open();
                 if( this.selecting_type[index] == 'vmd'){
                     await select.mmd.loadWithAnimation(
-                        this.character_list[select.index].fname, vmd_base + this.animation_list[select.vmd_index]);
+                        mmd_base + this.character_list[select.index].fname, vmd_base + this.animation_list[select.vmd_index], this.selecting_stage ? mmd_base + this.selecting_stage : "");
                 }else if( this.selecting_type[index] == 'vpd'){
                     await select.mmd.loadWithPose(
-                        this.character_list[select.index].fname, vpd_base + this.pose_list[select.vpd_index]);
+                        mmd_base + this.character_list[select.index].fname, vpd_base + this.pose_list[select.vpd_index], this.selecting_stage ? mmd_base + this.selecting_stage : "" );
                 }
             }catch(error){
                 console.error(error);
                 alert(error);
+            }finally{
+                this.progress_close();
             }
         },
     },

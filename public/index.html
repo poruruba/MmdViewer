@@ -17,7 +17,7 @@
   <!-- Latest compiled and minified JavaScript -->
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
 
-  <title>MMD Viewer : タイル表示</title>
+  <title>MMD Viewer</title>
 
   <link rel="stylesheet" href="css/start.css">
   <script src="js/methods_bootstrap.js"></script>
@@ -29,53 +29,18 @@
 
   <script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-
-  <script src="dist/js/ammo.wasm.js"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 </head>
-<body>
-  <div id="top" class="container-fluid">
-    <h1>MMD Viewer : タイル表示</h1>
+<body style="height:100%;">
+  <div id="top" class="container" style="height:100%;">
+      <h1>MMD Viewer</h1>
 
-    <div class="row">
-
-      <div class="col-xs-6" v-for="(value, target) in num_of_tile">
-        <div class="panel panel-default">
-          <div class="panel-heading">
-            <span class="form-inline">
-              <select class="form-control" v-model:number="selecting[target].index" v-on:change="select_change(target)">
-                <option value='-1' disabled selected>選択してください</option>
-                <option v-for="(value, index) in character_list" v-bind:value="index">{{value.title}}</option>
-              </select>
-              <select class="form-control" v-model="selecting_type[target]" v-on:change="select_change(target)">
-                <option value="vmd">vmd</option>
-                <option value="vpd">vpd</option>
-              </select>
-              <select v-if="selecting_type[target]=='vmd'" class="form-control" v-model:number="selecting[target].vmd_index" v-on:change="select_change(target)">
-                <option v-for="(value, index) in animation_list" v-bind:value="index">{{value}}</option>
-              </select>
-              <select v-else class="form-control" v-model:number="selecting[target].vpd_index" v-on:change="select_change(target)">
-                <option v-for="(value, index) in pose_list" v-bind:value="index">{{value}}</option>
-              </select>
-            </span>
-          </div>
-          <div class="panel-body" v-bind:id="'base_' + target">
-            <canvas v-bind:id="'canvas_' + target"></canvas>
-          </div>
-          <div class="panel-footer">
-            <button class="btn btn-default" v-on:click="pause_resume(target)"><span v-if="!selecting[target].pause">pause</span><span v-else>resume</span></button>
-            <button class="btn btn-default" v-on:click="save(target)">save</button>
-            <button class="btn btn-default" v-on:click="open(target)">open</button>
-          </div>
-        </div>
-      </div>
-
+        <a href="mmd_viewer_js">JS版<a><br>
+        <a href="mmd_viewer_jsm">module版</a><br>
+      
+        <!-- for progress-dialog -->
+        <progress-dialog v-bind:title="progress_title"></progress-dialog>
     </div>
 
-
-    <!-- for progress-dialog -->
-    <progress-dialog v-bind:title="progress_title"></progress-dialog>
-  </div>
-
-  <script src="js/start.js" type="module"></script>
+    <script src="js/start.js"></script>
 </body>

@@ -3,7 +3,6 @@
 import * as THREE from '../dist/build/three.module.js';
 
 import { OrbitControls } from '../dist/js/jsm/controls/OrbitControls.js';
-import { OutlineEffect } from '../dist/js/jsm/effects/OutlineEffect.js';
 import { MMDLoader } from '../dist/js/jsm/loaders/MMDLoader.js';
 import { MMDAnimationHelper } from '../dist/js/jsm/animation/MMDAnimationHelper.js';
 
@@ -13,6 +12,7 @@ const loader = new MMDLoader();
 
 class MmdView{
   constructor(canvas, width, height, grid_enable = true, orbit_enable = true ){
+
     this.camera_rasio = width / height;
     this.isPaused = false;
     this.ready = false;
@@ -37,7 +37,6 @@ class MmdView{
     // renderer
 
     this.renderer = new THREE.WebGLRenderer( { antialias: true, canvas: canvas, preserveDrawingBuffer: true } );
-    this.effect = new OutlineEffect( this.renderer );
     this.resize( width, height );
 
     // option
@@ -50,76 +49,104 @@ class MmdView{
 
     if( orbit_enable ){
       const controls = new OrbitControls( this.camera, this.renderer.domElement );
-      controls.minDistance = 10;
-      controls.maxDistance = 100;
     }
   }
 
-  async loadWithAnimation(modelFile, vmdFile){
+  async loadWithAnimation(modelFile, vmdFile, stageFile){
     await AmmoInit();
 
-    await new Promise( (resolve, reject) =>{
+    if( this.mesh ){
+      this.ready = false;
+      this.scene.remove(this.mesh);
+      this.mesh = null;
+    }
+    if( this.stage ){
+      this.scene.remove(this.stage);
+      this.stage = null;
+    }
+    
+    this.helper = new MMDAnimationHelper( {
+      afterglow: 2.0,
+    });
+    
+    this.mesh = await new Promise( (resolve, reject) =>{
       loader.loadWithAnimation( modelFile, vmdFile, ( mmd ) => {
-        if( this.mesh ){
-          this.ready = false;
-          this.scene.remove(this.mesh);
-          this.mesh = null;
-        }
+        const mesh = mmd.mesh;
+        mesh.position.y = - 10;
     
-        this.helper = new MMDAnimationHelper( {
-          afterglow: 2.0,
-        });
-    
-        this.mesh = mmd.mesh;
-        this.mesh.position.y = - 10;
-        this.scene.add( this.mesh );
-    
-        this.animation = mmd.animation;
-        this.helper.add( this.mesh, {
-            animation: this.animation,
+        const animation = mmd.animation;
+        this.helper.add( mesh, {
+            animation: animation,
             physics: true
         });
           
-        resolve();
+        resolve(mesh);
       }, this.onProgress, reject );
     });
+
+    this.scene.add(this.mesh);
+
+    if( stageFile ){
+      this.stage = await new Promise((resolve, reject) =>{
+        loader.load( stageFile, async ( mesh ) => {
+          mesh.position.y = -10;
+
+          resolve(mesh);
+        }, this.onProgress, reject );
+      });
+
+      this.scene.add(this.stage);
+    }
 
     if( !this.ready ){
       this.ready = true;
       this.animate(this);
     }
-}
+  }
 
-  async loadWithPose(modelFile, vpdFile){
+  async loadWithPose(modelFile, vpdFile, stageFile){
     await AmmoInit();
 
-    await new Promise( (resolve, reject) =>{
-      loader.load( modelFile, ( mesh ) => {
-        if( this.mesh ){
-          this.ready = false;
-          this.scene.remove(this.mesh);
-          this.mesh = null;
-        }
+    if( this.mesh ){
+      this.ready = false;
+      this.scene.remove(this.mesh);
+      this.mesh = null;
+    }
+    if( this.stage ){
+      this.scene.remove(this.stage);
+      this.stage = null;
+    }
     
-        this.helper = new MMDAnimationHelper( {
-          afterglow: 2.0
-        });
+    this.helper = new MMDAnimationHelper( {
+      afterglow: 2.0
+    });
     
-        this.mesh = mesh;
-        this.mesh.position.y = - 10;
-        this.scene.add( this.mesh );
+    this.mesh = await new Promise( (resolve, reject) =>{
+      loader.load( modelFile, async ( mesh ) => {    
+        mesh.position.y = - 10;
+
+        loader.loadVPD( vpdFile, false, ( vpd ) => {
+          this.helper.pose(mesh, vpd);
+
+          resolve(mesh);
+        }, this.onProgress, reject );
     
-        resolve();
       }, this.onProgress, reject );
     });
 
-    await new Promise( (resolve, reject) =>{
-      loader.loadVPD( vpdFile, false, ( vpd ) => {
-        this.vpd = vpd;
-        this.helper.pose(this.mesh, vpd);
-        resolve();
-      }, this.onProgress, reject );
-    });
+    this.scene.add( this.mesh );
+
+    if( stageFile ){
+      this.stage = await new Promise((resolve, reject) =>{
+        loader.load( stageFile, async ( mesh ) => {
+          mesh.position.y = -10;
+
+          resolve(mesh);
+        }, this.onProgress, reject );
+      });
+
+      this.scene.add(this.stage);
+    }
 
     if( !this.ready ){
       this.ready = true;
@@ -129,19 +156,19 @@ class MmdView{
 
   onProgress( xhr ) {
     if ( xhr.lengthComputable ) {
-        const percentComplete = xhr.loaded / xhr.total * 100;
-        console.log( Math.round( percentComplete, 2 ) + '% downloaded' );
+      const percentComplete = xhr.loaded / xhr.total * 100;
+      console.log( Math.round( percentComplete, 2 ) + '% downloaded' );
     }
   }
 
   resize(width, height) {
     if( height === undefined ){
-      this.effect.setSize( width, Math.floor(width / (this.camera_rasio)) );
+      this.renderer.setSize( width, Math.floor(width / (this.camera_rasio)) );
     }else{
       this.camera_rasio = width / height;
       this.camera.aspect = this.camera_rasio;
       this.camera.updateProjectionMatrix();
-      this.effect.setSize( width, height );
+      this.renderer.setSize( width, height );
     }
   }
 
@@ -162,6 +189,7 @@ class MmdView{
   dispose(){
     this.ready = false;
     this.scene.remove(this.mesh);
+    this.scene.remove(this.stage);
     this.renderer.dispose();
   }
 
@@ -169,9 +197,9 @@ class MmdView{
     if( !this.ready )
       return;
 
-    requestAnimationFrame( this.animate.bind(this) );
     this.helper.update( this.clock.getDelta() );
-    this.effect.render( this.scene, this.camera );
+    this.renderer.render( this.scene, this.camera );
+    requestAnimationFrame( this.animate.bind(this) );
   }
 }
 

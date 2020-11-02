@@ -3,6 +3,7 @@
 //var vConsole = new VConsole();
 
 import { MmdView } from './MmdView.js';
+import { MmdViewVr } from './MmdViewVr.js';
 
 var vue_options = {
     el: "#top",
@@ -39,16 +40,20 @@ var vue_options = {
     mounted: async function(){
         proc_load();
 
-        this.mmd = new MmdView($('#canvas_0')[0], window.innerWidth, window.innerHeight );
-        window.addEventListener( 'resize', function(){
-            this.mmd.resize(window.innerWidth, window.innerHeight)
-        }.bind(this), false );
-
         try{
+            if( searchs.mode == 'vr' || searchs.mode == 'ar' ){
+                this.mmd = new MmdViewVr($('#canvas_0')[0], window.innerWidth, window.innerHeight, searchs.mode );
+            }else{
+                this.mmd = new MmdView($('#canvas_0')[0], window.innerWidth, window.innerHeight );
+            }
+            window.addEventListener( 'resize', function(){
+                this.mmd.resize(window.innerWidth, window.innerHeight)
+            }.bind(this), false );
+
             if( searchs.type == 'vmd'){
-                await this.mmd.loadWithAnimation( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vmd) );
+                await this.mmd.loadWithAnimation( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vmd), decodeURIComponent(searchs.stage) );
             }else if( searchs.type == 'vpd'){
-                await this.mmd.loadWithPose( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vpd) );
+                await this.mmd.loadWithPose( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vpd), decodeURIComponent(searchs.stage) );
             }
         }catch(error){
             console.error(error);
