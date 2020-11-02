@@ -118,15 +118,15 @@ var vue_options = {
     methods: {
         open: function(index){
             var select = this.selecting[index];
-            var param = "pmx=" + mmd_base + encodeURIComponent(this.character_list[select.index].fname);
+            var param = "pmx=" + encodeURIComponent(mmd_base + this.character_list[select.index].fname);
             param += "&type=" + this.selecting_type[index];
             if( this.selecting_type[index] == 'vmd')
-                param += "&vmd=" + vmd_base + encodeURIComponent(this.animation_list[select.vmd_index]);
+                param += "&vmd=" + encodeURIComponent(vmd_base + this.animation_list[select.vmd_index]);
             else if( this.selecting_type[index] == 'vpd' )
-                param += "&vpd=" + vpd_base + encodeURIComponent(this.pose_list[select.vpd_index]);
+                param += "&vpd=" + encodeURIComponent(vpd_base + this.pose_list[select.vpd_index]);
             
             if( this.selecting_stage )
-                param += "&stage=" + mmd_base + this.selecting_stage;
+                param += "&stage=" + encodeURIComponent(mmd_base + this.selecting_stage);
             
             window.open("fullsize.html?" + param, this.character_list[this.selecting[index].vmd_index].title);
         },

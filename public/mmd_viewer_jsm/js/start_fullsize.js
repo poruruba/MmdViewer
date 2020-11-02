@@ -51,9 +51,9 @@ var vue_options = {
             }.bind(this), false );
 
             if( searchs.type == 'vmd'){
-                await this.mmd.loadWithAnimation( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vmd), decodeURIComponent(searchs.stage) );
+                await this.mmd.loadWithAnimation( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vmd), searchs.stage ? decodeURIComponent(searchs.stage) : "" );
             }else if( searchs.type == 'vpd'){
-                await this.mmd.loadWithPose( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vpd), decodeURIComponent(searchs.stage) );
+                await this.mmd.loadWithPose( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vpd), searchs.stage?decodeURIComponent(searchs.stage) :"");
             }
         }catch(error){
             console.error(error);
