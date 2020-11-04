@@ -3,12 +3,14 @@
 //var vConsole = new VConsole();
 
 import { MmdView } from './MmdView.js';
-import { MmdViewVr } from './MmdViewVr.js';
+import { MmdViewAr } from './MmdViewAr.js';
 
 var vue_options = {
     el: "#top",
     data: {
         progress_title: '', // for progress-dialog
+
+        mode: '',
     },
     computed: {
     },
@@ -17,7 +19,6 @@ var vue_options = {
             if( !e )
                 return;
             
-            console.log(e);
             if( e.key == 'Enter'){
                 var canvas = $('#canvas_0')[0];
         
@@ -33,16 +34,16 @@ var vue_options = {
                     this.mmd.start_animate();
                 }
             }
-        }
     },
-    created: function(){
-    },
-    mounted: async function(){
-        proc_load();
+        do_play: async function(fullscreen){
+            if( fullscreen )
+                $('#canvas_0')[0].webkitRequestFullscreen();
 
         try{
-            if( searchs.mode == 'vr' || searchs.mode == 'ar' ){
-                this.mmd = new MmdViewVr($('#canvas_0')[0], window.innerWidth, window.innerHeight, searchs.mode );
+                if( this.mode == 'vr' ){
+                    this.mmd = new MmdView($('#canvas_0')[0], window.innerWidth, window.innerHeight, true, false, true );
+                }else if( this.mode == 'ar' ){
+                    this.mmd = new MmdViewAr($('#canvas_0')[0], window.innerWidth, window.innerHeight, true, true, true );
             }else{
                 this.mmd = new MmdView($('#canvas_0')[0], window.innerWidth, window.innerHeight );
             }
@@ -55,12 +56,22 @@ var vue_options = {
             }else if( searchs.type == 'vpd'){
                 await this.mmd.loadWithPose( decodeURIComponent(searchs.pmx), decodeURIComponent(searchs.vpd), searchs.stage?decodeURIComponent(searchs.stage) :"");
             }
+                
+                document.addEventListener("keyup", this.KeyUpFunc);
         }catch(error){
             console.error(error);
             alert(error);
         }
+        }
+    },
+    created: function(){
+    },
+    mounted: async function(){
+        proc_load();
 
-        document.addEventListener("keyup", this.KeyUpFunc);
+        this.mode = searchs.mode;
+        if( this.mode != 'vr')
+            this.do_play(false);
     }
 };
 var vue = new Vue( vue_options );

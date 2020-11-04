@@ -35,8 +35,12 @@
 </head>
 <body style="margin: 0px;">
   <span id="top">
+    <span v-if="mode=='vr'">
+      <label>fullscreenボタンを押下してVRモードを開始します。</label><button v-on:click="do_play(true)">fullscreen</button>
+    </span>
     <canvas id="canvas_0"></canvas>
   </span>
 
   <script src="js/start_fullsize.js" type="module"></script>
 </body>
+</html>
