@@ -13,7 +13,6 @@ const loader = new MMDLoader();
 
 class MmdViewAr{
   constructor(canvas, width, height, grid_enable = true, orbit_enable = true, ar = false ){
-    this.vector = new THREE.Vector3();
 
     this.camera_rasio = width / height;
     this.isPaused = false;
