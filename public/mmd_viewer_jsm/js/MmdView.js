@@ -22,7 +22,10 @@ class MmdView{
 
     this.clock = new THREE.Clock();
 
-    this.camera = new THREE.PerspectiveCamera( 45, width / height, 1, 2000 );
+    if( this.vr )
+      this.camera = new THREE.PerspectiveCamera( 90, width / height, 1, 2000 );
+    else
+      this.camera = new THREE.PerspectiveCamera( 45, width / height, 1, 2000 );
     this.camera.position.z = 30;
 
     if( this.vr ){
