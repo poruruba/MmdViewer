@@ -11,24 +11,26 @@ const yaml = require('yaml');
 const multer = require('multer');
 const jwt_decode = require('jwt-decode');
 
-const func_table = [];
-
+// swagger.yamlの検索
 const folders = fs.readdirSync(CONTROLLERS_BASE);
 folders.forEach(folder => {
   const stats_dir = fs.statSync(CONTROLLERS_BASE + folder);
   if( !stats_dir.isDirectory() )
-        return;
+      return;
+
   try{
     const fname = CONTROLLERS_BASE + folder + "/" + TARGET_FNAME;
-    fs.statSync(fname);
+    const stats_file = fs.statSync(fname);
+    if( !stats_file.isFile() )
+      return;
 
+    // swagger.yamlの解析
     const swagger = yaml.parseDocument(fs.readFileSync(fname, 'utf-8'));
+    // paths配下のみ参照
     const paths = swagger.get('paths');
     paths.items.forEach(docPath =>{
-      const path = docPath.key.value;
       docPath.value.items.forEach(docMethod =>{
-        const method = docMethod.key.value;
-
+        // デフォルト値
         const options = {
           operationId : folder,
           func_type: 'normal',
@@ -36,23 +38,45 @@ folders.forEach(folder => {
           files: []
         };
 
+        // オプションタグ: operationId
+        // operationId: 任意
+        const docOperationId = docMethod.value.items.filter(item => item.key.value == 'operationId' );
+        if( docOperationId.length == 1 )
+          options.operationId = docOperationId[0].value.value;
+
+        // オプションタグ: x-hanndler
+        // x-hanndler: 任意
         const docHandler = docMethod.value.items.filter(item => item.key.value == 'x-handler' );
         let handler = 'handler';
         if( docHandler.length == 1 )
           handler = docHandler[0].value.value;
 
+        // オプションタグ: security
+        // security:
+        // - basicAuth: []
+        // - tokenAuth: []
+        // - apikeyAuth: []
+        // - jwtAuth: []
         const docSecurity = docMethod.value.items.filter(item => item.key.value == 'security' );
         if( docSecurity.length == 1 && docSecurity[0].value.items.length == 1 && docSecurity[0].value.items[0].items.length == 1)
           options.security = docSecurity[0].value.items[0].items[0].key.value;
 
+        // オプションタグ: x-functype
+        // x-functype: (express|empty|normal)
         const docFuncType = docMethod.value.items.filter(item => item.key.value == 'x-functype' );
         if( docFuncType.length == 1 )
           options.func_type = docFuncType[0].value.value;
   
+        // オプションタグ: consumes
         const docConsumes = docMethod.value.items.filter(item => item.key.value == 'consumes' );
         if( docConsumes.length == 1 && docConsumes[0].value.items.length == 1)
           options.content_type = docConsumes[0].value.items[0].value;
 
+        // file(multipart/form-data)の処理
+        // parameters:
+        // - in: formData
+        //   type: file
+        //   name: 任意
         if( options.content_type == 'multipart/form-data'){
           const parameters = docMethod.value.items.filter(item => item.key.value == 'parameters' );
           parameters.forEach(parameter => {
@@ -60,10 +84,10 @@ folders.forEach(folder => {
               const item_in = item2.items.filter(item => item.key.value == 'in' && item.value.value == 'formData');
               if( item_in.length != 1 )
                 return;
-                const item_type = item2.items.filter(item => item.key.value == 'type' && item.value.value == 'file');
+              const item_type = item2.items.filter(item => item.key.value == 'type' && item.value.value == 'file');
               if( item_type.length != 1 )
                 return;
-                const item_name = item2.items.filter(item => item.key.value == 'name');
+              const item_name = item2.items.filter(item => item.key.value == 'name');
               if( item_name.length != 1 )
                 return;
 
@@ -72,24 +96,31 @@ folders.forEach(folder => {
           });
         }
 
+        // path、methodの取得
+        const path = docPath.key.value;
+        const method = docMethod.key.value;
         console.log(path, method, handler, JSON.stringify(options));
         if( options.func_type == "express"){
+          // x-functype: express の場合
+          const func = require('./' + folder)[handler];
+
           switch(method){
             case 'get': {
-              router.get(path, func_table[folder]);
+              router.get(path, func);
               break;
             }
             case 'post': {
-              router.post(path, func_table[folder]);
+              router.post(path, func);
               break;
             }
             case 'head': {
-              router.head(path, func_table[folder]);
+              router.head(path, func);
               break;
             }
           }
         }else
         if( options.func_type == 'empty' ){
+          // x-functype: empty の場合
           switch(method){
             case 'get': {
               router.get(path, (req, res) =>{
@@ -111,7 +142,8 @@ folders.forEach(folder => {
             }
           }
         }else{
-          func_table[folder] = require('./' + folder)[handler];
+          // x-functype: normal の場合
+          options.postprocess = require('./' + folder)[handler];
 
           switch(method){
             case 'get': {
@@ -136,6 +168,7 @@ folders.forEach(folder => {
   }
 });
 
+// x-functype: normal の場合の前処理
 function preprocess(options){
   return function(req, res, next){
     req.swagger = {
@@ -143,35 +176,41 @@ function preprocess(options){
         operationId: options.operationId
       }
     }
+    req.postprocess = options.postprocess;
     res.func_type = options.func_type;
 
-    if( options.security && req.headers.authorization ){
-      switch( options.security ){
-        case 'tokenAuth':{
+    // securityの処理
+    switch( options.security ){
+      case 'tokenAuth':{
+        if( req.headers.authorization ){
           const decoded = jwt_decode(req.headers.authorization);
           req.requestContext = {
             authorizer : {
               claims : decoded
             }
           };
-          break;
         }
-        case 'basicAuth': {
+        break;
+      }
+      case 'basicAuth': {
+        if( req.headers.authorization ){
           let basic = req.headers.authorization.trim();
           if(basic.toLowerCase().startsWith('basic '))
             basic = basic.slice(6).trim();
   
-            const buf = Buffer.from(basic, 'base64');
-            const ascii = buf.toString('ascii');
+          const buf = Buffer.from(basic, 'base64');
+          const ascii = buf.toString('ascii');
   
           req.requestContext = {
             basicAuth : {
               basic : ascii.split(':')
             }
           };
-          break;
         }
-        case 'jwtAuth': {
+        break;
+      }
+      case 'jwtAuth': {
+        if( req.headers.authorization ){
           const decoded = jwt_decode(req.headers.authorization);
           req.requestContext = {
             jwtAuth : {
@@ -186,19 +225,23 @@ function preprocess(options){
           };
           const buffer = Buffer.from(JSON.stringify(claims));
           req.headers['x-endpoint-api-userinfo'] = buffer.toString('base64');
-          break;
         }
-        case 'apikeyAuth': {
+        break;
+      }
+      case 'apikeyAuth': {
+        const apikey = req.headers["x-api-key"];
+        if( apikey ){
           req.requestContext = {
             apikeyAuth : {
-              apikey : req.headers.authorization
+              apikey : apikey
             }
           };
-          break;
         }
+        break;
       }
     }
 
+    // file(multipart/form-data)の処理    
     if( options.content_type == 'multipart/form-data'){
       let upload;
       if( options.files && options.files.length > 0 ){
@@ -217,6 +260,7 @@ function preprocess(options){
   }
 }
 
+// x-functype: normal の場合の後処理
 function routing(req, res) {
 //  console.log(req);
 
@@ -225,7 +269,7 @@ function routing(req, res) {
 
   try{
       let event;
-      const func = func_table[operationId];
+      const func = req.postprocess;
       if( res.func_type == 'normal' ){
           event = {
               headers: req.headers,
@@ -306,9 +350,7 @@ function return_none(res){
     res.statusCode = 200;
     res.type('application/json');
 
-    if( res.func_type == 'alexa' ){
-        res.json({});
-    }else if(res.func_type == 'lambda'){
+    if(res.func_type == 'lambda'){
         res.json({ body: null });
     }else{
         res.json({});
