@@ -6,6 +6,7 @@ const loader = new THREE.MMDLoader();
 
 class MmdView{
   constructor(canvas, width, height, grid_enable = true, orbit_enable = true ){
+    this.canvas = canvas;
     this.camera_rasio = width / height;
     this.isPaused = false;
     this.ready = false;
@@ -47,6 +48,10 @@ class MmdView{
     }
   }
 
+  setCallback(callback) {
+    this.callback = callback;
+  }
+  
   async loadWithAnimation(modelFile, vmdFile, stageFile){
     await AmmoInit();
 
@@ -195,6 +200,9 @@ class MmdView{
     this.helper.update( this.clock.getDelta() );
     this.renderer.render( this.scene, this.camera );
     requestAnimationFrame( this.animate.bind(this) );
+    
+    if (this.callback)
+      this.callback(this.canvas);    
   }
 }
 
