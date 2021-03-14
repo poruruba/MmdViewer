@@ -13,7 +13,8 @@ const loader = new MMDLoader();
 
 class MmdViewAr{
   constructor(canvas, width, height, grid_enable = true, orbit_enable = true, ar = false ){
-
+    this.canvas = canvas;
+    
     this.camera_rasio = width / height;
     this.isPaused = false;
     this.ready = false;
@@ -57,7 +58,11 @@ class MmdViewAr{
       const controls = new OrbitControls( this.camera, this.renderer.domElement );
     }
   }
-
+  
+  setCallback(callback) {
+    this.callback = callback;
+  }
+  
   async loadWithAnimation(modelFile, vmdFile, stageFile){
     await AmmoInit();
 
@@ -207,6 +212,9 @@ class MmdViewAr{
     this.renderer.render( this.scene, this.camera );
 //    requestAnimationFrame( this.animate.bind(this) );
     this.renderer.setAnimationLoop(this.animate.bind(this));
+    
+    if (this.callback)
+      this.callback(this.canvas);    
   }
 }
 
